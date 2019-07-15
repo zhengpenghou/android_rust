@@ -70,8 +70,8 @@ def main():
                    check=True)
 
     # Dist
-    tarball_path = os.path.join(dist_dir, f'rust-{build_name}.tar.xz')
-    subprocess.run(['tar', 'cJf', tarball_path, '.'], cwd=paths.out_path(),
+    tarball_path = os.path.join(dist_dir, f'rust-{build_name}.tar.gz')
+    subprocess.run(['tar', 'czf', tarball_path, '.'], cwd=paths.out_path(),
                    check=True)
 
 if __name__ == '__main__':
