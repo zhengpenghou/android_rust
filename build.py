@@ -55,6 +55,13 @@ def main():
         if exn.errno != errno.EEXIST:
             raise
 
+    # Apply patches
+    for filename in glob.glob(paths.patches_path('rustc-*')):
+        with open(filename, 'r') as file:
+            p = subprocess.Popen(['patch', '-p1', '-N', '-r', '-'],
+                                 cwd=paths.rustc_path(), stdin=subprocess.PIPE)
+            p.communicate(file.read())
+
     # Configure
     config_toml.configure()
 
