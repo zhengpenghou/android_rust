@@ -29,7 +29,6 @@ def configure():
         cxx = paths.llvm_prebuilt('bin', 'clang++')
         ar = paths.llvm_prebuilt('bin', 'llvm-ar')
         ranlib = paths.llvm_prebuilt('bin', 'llvm-ranlib')
-        prefix = paths.out_path()
 
         def host_config(target):
             return """\
@@ -71,7 +70,7 @@ extended = true
 tools = ["cargo"]
 cargo-native-static = true
 [install]
-prefix = "{prefix}"
+prefix = "/"
 sysconfdir = "etc"
 [rust]
 channel = "dev"
@@ -84,7 +83,6 @@ remap-debuginfo = true
            cxx=cxx,
            ar=ar,
            ranlib=ranlib,
-           prefix=prefix,
            host_configs=host_configs,
            device_configs=device_configs,
            all_targets_config=all_targets_config))
