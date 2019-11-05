@@ -20,12 +20,32 @@ import errno
 import glob
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 
 import build_platform
 import config_toml
 import paths
+
+
+STDLIB_SOURCES = [
+        "src/liballoc",
+        "src/libcore",
+        "src/libpanic_abort",
+        "src/libpanic_unwind",
+        "src/libstd",
+        "src/libterm",
+        "src/libtest",
+        "src/libunwind",
+        "src/stdsimd",
+        "vendor/cfg-if",
+        "vendor/compiler_builtins",
+        "vendor/getopts",
+        "vendor/hashbrown",
+        "vendor/libc",
+        "vendor/unicode-width",
+]
 
 
 def parse_args():
@@ -89,6 +109,11 @@ def main():
         print("Build stage failed with error {}".format(ec))
         sys.exit(ec)
 
+    # Install sources
+    if build_platform.system() == 'linux':
+        for stdlib in STDLIB_SOURCES:
+            shutil.copytree(paths.rustc_path(stdlib), paths.stdlib_srcs(stdlib))
+
     # Fixup
     # The Rust build doesn't have an option to auto-strip binaries, so we do
     # it here.
@@ -101,6 +126,14 @@ def main():
         paths.out_path('bin', 'rustc'),
         paths.out_path('bin', 'cargo'),
         paths.out_path('bin', 'rustdoc')])
+
+    # Some stdlib crates might include Android.mk or Android.bp files.
+    # If they do, filter them out.
+    if build_platform.system() == 'linux':
+        for root, _, files in os.walk(paths.stdlib_srcs()):
+            for f in files:
+                if f in ('Android.mk', 'Android.bp'):
+                    os.remove(os.path.join(root, f))
 
     # Dist
     tarball_path = os.path.join(dist_dir, 'rust-{0}.tar.gz'.format(build_name))

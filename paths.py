@@ -46,6 +46,9 @@ def out_path(*args):
     """Generates a path relative to the output directory of the build."""
     return workspace_path('out', *args)
 
+def stdlib_srcs(*args):
+    """Generates a path relative to the directory to install stdlib sources."""
+    return out_path('src', 'stdlibs', *args)
 
 def rust_prebuilt(*args):
     """Generates a path relative to the rust prebuilt directory."""
