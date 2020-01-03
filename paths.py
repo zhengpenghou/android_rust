@@ -18,7 +18,7 @@ import build_platform
 
 THIS_DIR = os.path.realpath(os.path.dirname(__file__))
 
-STAGE0_RUST_VERSION = '1.39.0'
+STAGE0_RUST_VERSION = '1.40.0'
 CLANG_REVISION = 'r370808'
 
 
