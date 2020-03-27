@@ -21,7 +21,8 @@ import build_platform
 import paths
 
 host_targets = [build_platform.triple()]
-device_targets = ['aarch64-linux-android', 'arm-linux-androideabi']
+device_targets = ['aarch64-linux-android', 'arm-linux-androideabi',
+                  'x86_64-linux-android', 'i686-linux-android']
 all_targets = host_targets + device_targets
 
 
@@ -83,10 +84,12 @@ linker = "{cc}"
                 f.write("""\
 #!/bin/sh
 {real_cc} $* -fuse-ld=lld --target={target} --sysroot={sysroot} \
-        -L{gcc_libdir} -isystem {sys_includes} -isystem {sys_includes}/{target}
+        -L{gcc_libdir} -L{sys_dir} -isystem {sys_includes} \
+        -isystem {sys_includes}/{target}
 """.format(real_cc=cc, sysroot=paths.plat_ndk_sysroot(target),
            sys_includes=paths.ndk_sysroot('usr', 'include'), target=target,
-           gcc_libdir=paths.gcc_libdir(target)))
+           gcc_libdir=paths.gcc_libdir(target),
+           sys_dir=paths.plat_ndk_llvm_libs(target)))
             s = os.stat(wrapper_name)
             os.chmod(wrapper_name, s.st_mode | stat.S_IEXEC)
             return """\
