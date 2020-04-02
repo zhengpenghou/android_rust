@@ -113,6 +113,7 @@ target = {all_targets_config}
 cargo = "{cargo}"
 rustc = "{rustc}"
 verbose = 1
+profiler = true
 docs = false
 submodules = false
 locked-deps = true

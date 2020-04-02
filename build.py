@@ -34,6 +34,7 @@ STDLIB_SOURCES = [
         "src/libcore",
         "src/libpanic_abort",
         "src/libpanic_unwind",
+        "src/libprofiler_builtins",
         "src/libstd",
         "src/libterm",
         "src/libtest",
