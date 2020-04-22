@@ -131,6 +131,7 @@ sysconfdir = "etc"
 [rust]
 channel = "dev"
 remap-debuginfo = true
+deny-warnings = false
 {host_configs}
 {device_configs}
 """.format(cargo=cargo,
