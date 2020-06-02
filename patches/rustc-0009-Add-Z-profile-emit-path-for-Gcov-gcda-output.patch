@@ -56,17 +56,6 @@ index a1ecf4e85..a8b6c6ea1 100644
      relro_level: Option<RelroLevel> = (None, parse_relro_level, [TRACKED],
          "choose which RELRO level to use"),
      nll_facts: bool = (false, parse_bool, [UNTRACKED],
-diff --git a/src/test/run-make-fulldeps/profile/Makefile b/src/test/run-make-fulldeps/profile/Makefile
-index c12712590..04d382b47 100644
---- a/src/test/run-make-fulldeps/profile/Makefile
-+++ b/src/test/run-make-fulldeps/profile/Makefile
-@@ -7,3 +7,6 @@ all:
-        $(call RUN,test) || exit 1
-        [ -e "$(TMPDIR)/test.gcno" ] || (echo "No .gcno file"; exit 1)
-        [ -e "$(TMPDIR)/test.gcda" ] || (echo "No .gcda file"; exit 1)
-+       $(RUSTC) -g -Z profile -Z profile-emit=$(TMPDIR)/abc/abc.gcda test.rs
-+       $(call RUN,test) || exit 1
-+       [ -e "$(TMPDIR)/abc/abc.gcda" ] || (echo "gcda file not emitted to defined path"; exit 1)
 -- 
 2.27.0.rc0.183.gde8f92d652-goog
 

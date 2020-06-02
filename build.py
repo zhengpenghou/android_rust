@@ -57,6 +57,9 @@ def parse_args():
     parser = argparse.ArgumentParser('Build the Rust Toolchain')
     parser.add_argument('--build-name', type=str, default='dev',
                         help='Release name for the dist result')
+    parser.add_argument('--no-patch-abort',
+                        help='Don\'t abort on patch failure. \
+                        Useful for local development.')
     return parser.parse_args()
 
 
@@ -84,8 +87,22 @@ def main():
     for filename in glob.glob(paths.patches_path('rustc-*')):
         with open(filename, 'r') as file:
             p = subprocess.Popen(['patch', '-p1', '-N', '-r', '-'],
-                                 cwd=paths.rustc_path(), stdin=subprocess.PIPE)
-            p.communicate(file.read())
+                                 cwd=paths.rustc_path(), stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE)
+            out, _ = p.communicate(file.read())
+
+            # Print output for logging purposes.
+            print(out)
+
+            # Check for the presence of FAILED as the error code is the same
+            # for a failed patch and an already-applied patch. This makes it
+            # less painful for developers.
+            if 'FAILED' in out and not args.no_patch_abort:
+                print("Build failed when applying patch {}"
+                        .format(filename))
+                print("If developing locally, try the --no-patch-abort flag")
+                sys.exit(p.returncode)
+
 
     # Configure
     config_toml.configure()
