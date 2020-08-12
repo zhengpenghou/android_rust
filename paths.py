@@ -19,7 +19,7 @@ import build_platform
 THIS_DIR = os.path.realpath(os.path.dirname(__file__))
 
 STAGE0_RUST_VERSION = '1.44.0'
-CLANG_REVISION = 'r383902'
+CLANG_REVISION = 'r383902b'
 
 
 def workspace_path(*args):
