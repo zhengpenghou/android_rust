@@ -51,7 +51,7 @@ def configure():
                                                    '--show-sdk-path'])
 
             if sysroot:
-                sysroot_flags = "--sysroot " + sysroot
+                sysroot_flags = "--sysroot " + sysroot.rstrip()
             else:
                 sysroot_flags = ""
 
