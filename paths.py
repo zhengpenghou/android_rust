@@ -55,16 +55,27 @@ def rust_prebuilt(*args):
     return workspace_path('prebuilts', 'rust', build_platform.prebuilt(),
                           STAGE0_RUST_VERSION, *args)
 
+def clang_name():
+    """Returns the versioned clang directory name."""
+    return 'clang-{0}'.format(CLANG_REVISION)
+
 def llvm_prebuilt(*args):
     """Generates a path relative to the LLVM prebuilt directory."""
-    clang_name = 'clang-{0}'.format(CLANG_REVISION)
     return workspace_path('prebuilts', 'clang', 'host',
-                          build_platform.prebuilt(), clang_name, *args)
+                          build_platform.prebuilt(), clang_name(), *args)
 
-def cxx_linker_path():
-    clang_name = 'clang-{0}'.format(CLANG_REVISION)
-    return workspace_path('prebuilts', 'clang', 'host', build_platform.prebuilt(), clang_name,
-                           'lib64')
+def cxx_linker_path(*args):
+    """Generates an absolute path relative to the LLVM C++ runtime"""
+    return llvm_prebuilt('lib64', *args)
+
+def android_cxx_linker_path(*args):
+    """Generates a relative path to the LLVM C++ in the Android tree"""
+    # We live at      prebuilts/rust/${BUILD_PLATFORM}/${VERSION}/bin
+    # libc++ lives at prebuilts/clang/host/${BUILD_PLATFORM}
+    #                 /clang-${CLANG_REVISION}/lib64
+    return os.path.join('..', '..', '..', '..', 'clang', 'host',
+                        build_platform.prebuilt(), clang_name(), 'lib64',
+                        *args)
 
 def cmake_prebuilt(*args):
     """Generates a path relative to the Cmake prebuilt directory."""
