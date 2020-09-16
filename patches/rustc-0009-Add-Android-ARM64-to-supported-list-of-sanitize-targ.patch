@@ -1,4 +1,4 @@
-From d883df487c40f3abfccd1768a54425ce0859423b Mon Sep 17 00:00:00 2001
+From 9488e3edbdec44af1c576ee10477d946deaa26d3 Mon Sep 17 00:00:00 2001
 From: Ivan Lozano <ivanlozano@google.com>
 Date: Tue, 19 May 2020 12:10:04 -0400
 Subject: [PATCH] Add Android ARM64 to supported list of sanitize targets.
@@ -9,17 +9,17 @@ Change-Id: I3c8210a0d7d1553a537d6a66b1ca96a75632070d
  1 file changed, 1 insertion(+)
 
 diff --git a/src/librustc_session/session.rs b/src/librustc_session/session.rs
-index f0bbe1d0a..1f6b023a8 100644
+index fcd5dab94..19364f6a8 100644
 --- a/src/librustc_session/session.rs
 +++ b/src/librustc_session/session.rs
-@@ -1199,6 +1199,7 @@ fn validate_commandline_args_with_session_available(sess: &Session) {
-             "x86_64-apple-darwin",
-             "x86_64-fuchsia",
-             "aarch64-fuchsia",
-+            "aarch64-linux-android",
-         ];
-         const TSAN_SUPPORTED_TARGETS: &[&str] =
-             &["x86_64-unknown-linux-gnu", "x86_64-apple-darwin"];
+@@ -1359,6 +1359,7 @@ fn validate_commandline_args_with_session_available(sess: &Session) {
+ 
+     const ASAN_SUPPORTED_TARGETS: &[&str] = &[
+         "aarch64-fuchsia",
++        "aarch64-linux-android",
+         "aarch64-unknown-linux-gnu",
+         "x86_64-apple-darwin",
+         "x86_64-fuchsia",
 -- 
-2.28.0.220.ged08abb693-goog
+2.28.0.681.g6f77f65b4e-goog
 
