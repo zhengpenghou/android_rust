@@ -116,14 +116,33 @@ def extract_arch(target):
     canon_arch = target.split('-')[0]
     if canon_arch == 'aarch64':
         return 'arm64'
+    if canon_arch == 'armv7':
+        return 'arm'
     if canon_arch == 'i686':
         return 'x86'
     return canon_arch
 
 
+def normalize_target(target):
+    """Translates triples into their general form."""
+    if target == 'armv7-linux-androideabi':
+        return 'arm-linux-androideabi'
+    return target
+
+
 def ndk_sysroot(*args):
     """Generates a path relative to the NDK sysroot."""
     return ndk('sysroot', *args)
+
+
+def sys_includes(*args):
+    """Generates a path relative to the NDK sysroot include dir."""
+    return ndk_sysroot('usr', 'include', *args)
+
+
+def target_includes(target, *args):
+    """Generates a path relative to the target-specific NDK include dir."""
+    return sys_includes(normalize_target(target), *args)
 
 
 def ndk_llvm(*args):
@@ -133,7 +152,7 @@ def ndk_llvm(*args):
 
 def plat_ndk_llvm_libs(target, *args):
     """Generates a path relative to the target's LLVM NDK sysroot libs"""
-    return ndk_llvm('sysroot', 'usr', 'lib', target, *args)
+    return ndk_llvm('sysroot', 'usr', 'lib', normalize_target(target), *args)
 
 
 def plat_ndk_sysroot(target, *args):
@@ -150,4 +169,4 @@ def plat_ndk_sysroot(target, *args):
 
 def gcc_libdir(target, *args):
     """Locates the directory with the gcc library target prebuilts."""
-    return ndk_llvm('lib', 'gcc', target, '4.9.x', *args)
+    return ndk_llvm('lib', 'gcc', normalize_target(target), '4.9.x', *args)
