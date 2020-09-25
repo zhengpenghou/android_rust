@@ -22,9 +22,7 @@ import paths
 
 host_targets = [build_platform.triple()]
 device_targets = ['aarch64-linux-android', 'armv7-linux-androideabi',
-                  'x86_64-linux-android', 'i686-linux-android',
-# TODO(b/169245712) Remove this target after Soong migrates off it.
-                  'arm-linux-androideabi']
+                  'x86_64-linux-android', 'i686-linux-android']
 all_targets = host_targets + device_targets
 
 
