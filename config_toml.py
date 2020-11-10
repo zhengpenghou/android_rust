@@ -136,7 +136,7 @@ locked-deps = true
 vendor = true
 full-bootstrap = true
 extended = true
-tools = ["cargo", "clippy", "rustfmt"]
+tools = ["cargo", "clippy", "rustfmt", "rust-analyzer"]
 cargo-native-static = true
 [install]
 prefix = "/"
