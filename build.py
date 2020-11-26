@@ -100,10 +100,7 @@ def main():
             print("Applying patch: " + filename)
             print(out)
 
-            # Check for the presence of FAILED as the error code is the same
-            # for a failed patch and an already-applied patch. This makes it
-            # less painful for developers.
-            if 'FAILED' in out and not args.no_patch_abort:
+            if p.returncode != 0 and not args.no_patch_abort:
                 print("Build failed when applying patch {}"
                         .format(filename))
                 print("If developing locally, try the --no-patch-abort flag")
