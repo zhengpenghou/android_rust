@@ -8,10 +8,10 @@ Change-Id: I3c8210a0d7d1553a537d6a66b1ca96a75632070d
  src/librustc_session/session.rs | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/src/librustc_session/session.rs b/src/librustc_session/session.rs
+diff --git a/compiler/rustc_session/src/session.rs b/compiler/rustc_session/src/session.rs
 index fcd5dab94..19364f6a8 100644
---- a/src/librustc_session/session.rs
-+++ b/src/librustc_session/session.rs
+--- a/compiler/rustc_session/src/session.rs
++++ b/compiler/rustc_session/src/session.rs
 @@ -1359,6 +1359,7 @@ fn validate_commandline_args_with_session_available(sess: &Session) {
  
      const ASAN_SUPPORTED_TARGETS: &[&str] = &[

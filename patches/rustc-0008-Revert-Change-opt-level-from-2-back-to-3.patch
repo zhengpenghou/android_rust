@@ -28,10 +28,10 @@ index be15e50e2..41e69ed86 100644
  [profile.release.package.compiler_builtins]
  # The compiler-builtins crate cannot reference libcore, and it's own CI will
  # verify that this is the case. This requires, however, that the crate is built
-diff --git a/src/librustc_mir/interpret/step.rs b/src/librustc_mir/interpret/step.rs
+diff --git a/compiler/rustc_mir/src/interpret/step.rs b/compiler/rustc_mir/src/interpret/step.rs
 index 18f9bbd2e..fea7e50f9 100644
---- a/src/librustc_mir/interpret/step.rs
-+++ b/src/librustc_mir/interpret/step.rs
+--- a/compiler/rustc_mir/src/interpret/step.rs
++++ b/compiler/rustc_mir/src/interpret/step.rs
 @@ -38,9 +38,6 @@ impl<'mir, 'tcx: 'mir, M: Machine<'mir, 'tcx>> InterpCx<'mir, 'tcx, M> {
      /// Returns `true` as long as there are more things to do.
      ///
