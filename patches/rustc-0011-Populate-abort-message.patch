@@ -94,6 +94,19 @@ index 9690996e602..b19f14983ce 100644
      abort();
  
      cfg_if::cfg_if! {
+diff --git a/vendor/libc/src/unix/linux_like/android/mod.rs b/vendor/libc/src/unix/linux_like/android/mod.rs
+index 079de283f89..da74c7cdb35 100644
+--- a/vendor/libc/src/unix/linux_like/android/mod.rs
++++ b/vendor/libc/src/unix/linux_like/android/mod.rs
+@@ -2748,6 +2748,8 @@ extern "C" {
+     ) -> ::size_t;
+ 
+     pub fn regfree(preg: *mut ::regex_t);
++
++    pub fn android_set_abort_message(msg: *const ::c_char);
+ }
+ 
+ cfg_if! {
 diff --git a/vendor/libc-0.2.79/src/unix/linux_like/android/mod.rs b/vendor/libc-0.2.79/src/unix/linux_like/android/mod.rs
 index 079de283f89..da74c7cdb35 100644
 --- a/vendor/libc-0.2.79/src/unix/linux_like/android/mod.rs
