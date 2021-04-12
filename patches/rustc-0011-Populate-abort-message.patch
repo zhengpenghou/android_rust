@@ -1,21 +1,33 @@
-From 67e59c05eb2d907d5a8a1ccd5785939af78532f4 Mon Sep 17 00:00:00 2001
-From: Jeff Vander Stoep <jeffv@google.com>
-Date: Mon, 29 Mar 2021 12:23:47 +0200
-Subject: [PATCH] Populate abort message
+commit 52ee9fbc027f7c371ed2e34ad191633a42c11c95
+Author: Thiébaud Weksteen <tweek@google.com>
+Date:   Mon Mar 15 11:21:39 2021 +0100
 
-Change-Id: I36d84d95eededb2670fb9923ad9c848e8519d8e5
----
- library/panic_abort/Cargo.toml     |  1 +
- library/panic_abort/src/android.rs | 27 +++++++++++++++++++++++++++
- library/panic_abort/src/lib.rs     | 10 +++++++++-
- 3 files changed, 37 insertions(+), 1 deletion(-)
- create mode 100644 library/panic_abort/src/android.rs
+    android: set abort message
+    
+    Android has the ability to supply an abort message [1]. This message is
+    automatically included in the debug trace, which helps debugging [2].
+    Modify panic_abort to populate this message before calling abort().
+    
+    [1] https://android.googlesource.com/platform/bionic/+/master/libc/include/android/set_abort_message.h
+    [2] https://source.android.com/devices/tech/debug/native-crash
 
+diff --git a/Cargo.lock b/Cargo.lock
+index 4bb32f842c2..5b559ae17cf 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2482,6 +2482,7 @@ dependencies = [
+ name = "panic_abort"
+ version = "0.0.0"
+ dependencies = [
++ "alloc",
+  "cfg-if 0.1.10",
+  "compiler_builtins",
+  "core",
 diff --git a/library/panic_abort/Cargo.toml b/library/panic_abort/Cargo.toml
-index b15919fad7..94bd77b4d8 100644
+index caa89aa30d0..bdab664cd64 100644
 --- a/library/panic_abort/Cargo.toml
 +++ b/library/panic_abort/Cargo.toml
-@@ -10,6 +10,7 @@ bench = false
+@@ -13,6 +13,7 @@ bench = false
  doc = false
  
  [dependencies]
@@ -25,39 +37,61 @@ index b15919fad7..94bd77b4d8 100644
  libc = { version = "0.2", default-features = false }
 diff --git a/library/panic_abort/src/android.rs b/library/panic_abort/src/android.rs
 new file mode 100644
-index 0000000000..f68bfda408
+index 00000000000..34d77502eab
 --- /dev/null
 +++ b/library/panic_abort/src/android.rs
-@@ -0,0 +1,27 @@
-+#![feature(std_internals)]
-+
+@@ -0,0 +1,49 @@
 +use alloc::string::String;
-+use alloc::boxed::Box;
-+use core::any::Any;
++use core::mem::transmute;
 +use core::panic::BoxMeUp;
++use core::ptr::copy_nonoverlapping;
 +
-+#[rustc_std_internal_symbol]
-+unsafe fn format_payload(payload: *mut &mut dyn BoxMeUp) -> String {
-+    let payload = Box::from_raw((*payload).take_box());
++const ANDROID_SET_ABORT_MESSAGE: &[u8] = b"android_set_abort_message\0";
++type SetAbortMessageType = unsafe extern "C" fn(*const libc::c_char) -> ();
++
++// Forward the abort message to libc's android_set_abort_message. We try our best to populate the
++// message but as this function may already be called as part of a failed allocation, it may not be
++// possible to do so.
++//
++// Some methods of core are on purpose avoided (such as try_reserve) as these rely on the correct
++// resolution of rust_eh_personality which is loosely defined in panic_abort.
++//
++// Weakly resolve the symbol for android_set_abort_message. This function is only available
++// for API >= 21.
++pub(crate) unsafe fn android_set_abort_message(payload: *mut &mut dyn BoxMeUp) {
++    let func_addr =
++        libc::dlsym(libc::RTLD_DEFAULT, ANDROID_SET_ABORT_MESSAGE.as_ptr() as *const libc::c_char)
++            as usize;
++    if func_addr == 0 {
++        return;
++    }
++
++    let payload = (*payload).get();
 +    let msg = match payload.downcast_ref::<&'static str>() {
-+        Some(s) => String::from(*s),
++        Some(msg) => msg.as_bytes(),
 +        None => match payload.downcast_ref::<String>() {
-+            Some(s) => String::from(s),
-+            None => String::from("<unsupported panic payload type>"),
++            Some(msg) => msg.as_bytes(),
++            None => &[],
 +        },
 +    };
-+    return msg
-+}
++    if msg.is_empty() {
++        return;
++    }
 +
-+pub(crate) unsafe fn android_set_abort_message(payload: *mut &mut dyn BoxMeUp) {
-+        // std::ffi::CString is not available here. Use alloc::vec to create the char* argument.
-+        // Manually append the final null byte.
-+        let mut msg = format_payload(payload).into_bytes();
-+        msg.push(0);
-+        libc::android_set_abort_message(msg.as_ptr() as *const libc::c_char);
++    // Allocate a new buffer to append the null byte.
++    let size = msg.len() + 1usize;
++    let buf = libc::malloc(size) as *mut libc::c_char;
++    if buf.is_null() {
++        return; // allocation failure
++    }
++    copy_nonoverlapping(msg.as_ptr(), buf as *mut u8, msg.len());
++    buf.offset(msg.len() as isize).write(0);
++
++    let func = transmute::<usize, SetAbortMessageType>(func_addr);
++    func(buf);
 +}
 diff --git a/library/panic_abort/src/lib.rs b/library/panic_abort/src/lib.rs
-index eb2277d8ba..4b700cb86e 100644
+index eb2277d8baa..5dcd1e6af36 100644
 --- a/library/panic_abort/src/lib.rs
 +++ b/library/panic_abort/src/lib.rs
 @@ -19,6 +19,9 @@
@@ -70,22 +104,14 @@ index eb2277d8ba..4b700cb86e 100644
  use core::any::Any;
  use core::panic::BoxMeUp;
  
-@@ -28,9 +31,14 @@ pub unsafe extern "C" fn __rust_panic_cleanup(_: *mut u8) -> *mut (dyn Any + Sen
-     unreachable!()
- }
- 
--// "Leak" the payload and shim to the relevant abort on the platform in question.
-+// Use the relevant abort on the platform in question.
+@@ -31,6 +34,10 @@ pub unsafe extern "C" fn __rust_panic_cleanup(_: *mut u8) -> *mut (dyn Any + Sen
+ // "Leak" the payload and shim to the relevant abort on the platform in question.
  #[rustc_std_internal_symbol]
  pub unsafe extern "C" fn __rust_start_panic(_payload: *mut &mut dyn BoxMeUp) -> u32 {
-+
 +    // Android has the ability to attach a message as part of the abort.
 +    #[cfg(target_os = "android")]
-+    android::android_set_abort_message(_payload as *mut &mut dyn BoxMeUp);
++    android::android_set_abort_message(_payload);
 +
      abort();
  
      cfg_if::cfg_if! {
--- 
-2.31.0.291.g576ba9dcdaf-goog
-
