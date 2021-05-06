@@ -167,6 +167,17 @@ def main():
         paths.out_path('bin', 'cargo'),
         paths.out_path('bin', 'rustdoc')])
 
+    # Install the libc++ library to lib64/
+    if build_platform.system() == 'darwin':
+        libcxx_name = 'libc++.dylib'
+    else:
+        libcxx_name = 'libc++.so'
+    lib64_path = paths.out_path('lib64')
+    if not os.path.exists(lib64_path):
+        os.makedirs(lib64_path)
+    shutil.copy2(paths.cxx_linker_path(libcxx_name),
+                 paths.out_path('lib64', libcxx_name))
+
     # Some stdlib crates might include Android.mk or Android.bp files.
     # If they do, filter them out.
     if build_platform.system() == 'linux':

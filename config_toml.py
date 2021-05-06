@@ -36,15 +36,14 @@ def configure():
         ar = paths.llvm_prebuilt('bin', 'llvm-ar')
         cxxstd = paths.llvm_prebuilt('include', 'c++', 'v1')
         ranlib = paths.llvm_prebuilt('bin', 'llvm-ranlib')
-        # Add the path at which libc++ can be found during the build
-        cxx_linker_flags = ' -Wl,-rpath,' + paths.cxx_linker_path()
         # Add the path at which libc++ can be found in Android checkouts
-        cxx_linker_flags += ' -Wl,-rpath,'
+        cxx_linker_flags = ' -Wl,-rpath,'
         if build_platform.system() == 'darwin':
-            cxx_linker_flags += '@loader_path/'
+            cxx_linker_flags += '@loader_path/../lib64'
         else:
-            cxx_linker_flags += '\\$ORIGIN/'
-        cxx_linker_flags += paths.android_cxx_linker_path()
+            cxx_linker_flags += '\\$ORIGIN/../lib64'
+        # Add the path at which libc++ can be found during the build
+        cxx_linker_flags += ' -Wl,-rpath,' + paths.cxx_linker_path()
 
         def host_config(target):
             wrapper_name = paths.this_path('clang-%s' % target)
