@@ -1,0 +1,61 @@
+From 950a386fd0d790867a3ba9b1e0513aad971cba53 Mon Sep 17 00:00:00 2001
+From: Matthew Maurer <mmaurer@google.com>
+Date: Fri, 16 Jul 2021 13:44:09 -0700
+Subject: [PATCH] Statically link android_set_abort_message
+
+For upstream, we were required to dynamically acquire this symbol
+because their minimum API support is < 21. However:
+* We are building for the platform, and know our API is above 21.
+* In order to be able to produce fully static binaries, we need to avoid
+  dlsym.
+* In order to allow Rust usage in low level components like the loader,
+  we need to avoid dlsym.
+
+Bug: 178565008
+Change-Id: I65e13d08d207ad7f585ce7c4d079c4442c90b3fc
+---
+ library/panic_abort/src/android.rs | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/library/panic_abort/src/android.rs b/library/panic_abort/src/android.rs
+index 34d77502ea..4c67322d3f 100644
+--- a/library/panic_abort/src/android.rs
++++ b/library/panic_abort/src/android.rs
+@@ -3,26 +3,13 @@ use core::mem::transmute;
+ use core::panic::BoxMeUp;
+ use core::ptr::copy_nonoverlapping;
+ 
+-const ANDROID_SET_ABORT_MESSAGE: &[u8] = b"android_set_abort_message\0";
+-type SetAbortMessageType = unsafe extern "C" fn(*const libc::c_char) -> ();
+-
+ // Forward the abort message to libc's android_set_abort_message. We try our best to populate the
+ // message but as this function may already be called as part of a failed allocation, it may not be
+ // possible to do so.
+ //
+ // Some methods of core are on purpose avoided (such as try_reserve) as these rely on the correct
+ // resolution of rust_eh_personality which is loosely defined in panic_abort.
+-//
+-// Weakly resolve the symbol for android_set_abort_message. This function is only available
+-// for API >= 21.
+ pub(crate) unsafe fn android_set_abort_message(payload: *mut &mut dyn BoxMeUp) {
+-    let func_addr =
+-        libc::dlsym(libc::RTLD_DEFAULT, ANDROID_SET_ABORT_MESSAGE.as_ptr() as *const libc::c_char)
+-            as usize;
+-    if func_addr == 0 {
+-        return;
+-    }
+-
+     let payload = (*payload).get();
+     let msg = match payload.downcast_ref::<&'static str>() {
+         Some(msg) => msg.as_bytes(),
+@@ -44,6 +31,5 @@ pub(crate) unsafe fn android_set_abort_message(payload: *mut &mut dyn BoxMeUp) {
+     copy_nonoverlapping(msg.as_ptr(), buf as *mut u8, msg.len());
+     buf.offset(msg.len() as isize).write(0);
+ 
+-    let func = transmute::<usize, SetAbortMessageType>(func_addr);
+-    func(buf);
++    libc::android_set_abort_message(buf);
+ }
+-- 
+2.32.0.402.g57bb445576-goog
+
