@@ -55,8 +55,9 @@ def configure(rustc_path):
             # to go hunt for it on OSX
             # On pre-Mojave, this command will output the empty string.
             if build_platform.system() == 'darwin':
-                sysroot = subprocess.check_output(['xcrun', '--sdk', 'macosx',
-                                                   '--show-sdk-path']).rstrip()
+                output = subprocess.check_output(['xcrun', '--sdk', 'macosx',
+                                                  '--show-sdk-path'])
+                sysroot = output.rstrip().decode('utf-8')
 
             if sysroot:
                 sysroot_flags = "--sysroot " + sysroot
