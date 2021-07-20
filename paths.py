@@ -48,7 +48,7 @@ def out_path(*args) -> Path:
 
 def stdlib_srcs(*args) -> Path:
     """Generates a path relative to the directory to install stdlib sources."""
-    return out_path('src', 'stdlibs', *args)
+    return out_path('package', 'src', 'stdlibs', *args)
 
 def rust_prebuilt(*args) -> Path:
     """Generates a path relative to the rust prebuilt directory."""
