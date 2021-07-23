@@ -64,7 +64,11 @@ def configure(rustc_path):
             else:
                 sysroot_flags = ""
 
-            ld_option = '-fuse-ld=lld' if build_platform.system() == 'linux' else ''
+            ld_option = None
+            if build_platform.system() == 'linux':
+                ld_option = '-fuse-ld=lld -Wno-unused-command-line-argument'
+            else:
+                ld_option = ''
 
             with open(wrapper_name, 'w') as f:
                 f.write("""\
@@ -99,8 +103,8 @@ linker = "{cxx}"
             with open(wrapper_name, 'w') as f:
                 f.write("""\
 #!/bin/sh
-{real_cc} $* -fuse-ld=lld --target={target} --sysroot={sysroot} \
-        -L{gcc_libdir} -L{sys_dir} -isystem {sys_includes} \
+{real_cc} $* -fuse-ld=lld -Wno-unused-command-line-argument --target={target} \
+        --sysroot={sysroot} -L{gcc_libdir} -L{sys_dir} -isystem {sys_includes} \
         -isystem {target_includes}
 """.format(real_cc=cc, sysroot=paths.plat_ndk_sysroot(target),
            sys_includes=paths.sys_includes(),
