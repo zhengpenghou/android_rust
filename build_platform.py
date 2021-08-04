@@ -4,7 +4,7 @@ building under for the purpose of selecting the correct paths and targets.
 
 import platform
 
-def system():
+def system() -> str:
     """Returns a canonicalized OS type. Will be one of 'linux' or 'darwin'
     as Windows is unsupported at the moment."""
     sys = platform.system()
@@ -14,18 +14,18 @@ def system():
         return 'darwin'
     raise RuntimeError("Unknown System: " + sys)
 
-def prebuilt():
+def prebuilt() -> str:
     """Returns the prebuilt subdirectory for prebuilts which do not use
     subarch specialization."""
     return system() + '-x86'
 
-def prebuilt_full():
+def prebuilt_full() -> str:
     """Returns the prebuilt subdirectory for prebuilts which have subarch
     specialization available.
     """
     return system() + '-x86_64'
 
-def triple():
+def triple() -> str:
     """Returns the target triple of the build environment."""
     build_os = system()
     if build_os == 'linux':
@@ -34,7 +34,7 @@ def triple():
         return 'x86_64-apple-darwin'
     raise RuntimeError("Unknown OS: " + build_os)
 
-def alt_triples():
+def alt_triples() -> list[str]:
     """Returns the multilib targets for the build environment."""
     build_os = system()
     if build_os == 'linux':

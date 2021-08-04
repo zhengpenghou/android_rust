@@ -26,7 +26,7 @@ import sys
 
 import build_platform
 import config_toml
-import paths
+from paths import *
 
 
 STDLIB_SOURCES = [
@@ -76,16 +76,13 @@ def main():
     # Update environment variables
     #
 
-    OUT_PATH_PACKAGE = paths.out_path('package')
-    OUT_PATH_RUSTC   = paths.out_path('rustc')
-
     env = dict(os.environ)
     env['PATH'] = os.pathsep.join(
         [p.as_posix() for p in [
-          paths.rust_prebuilt('bin'),
-          paths.cmake_prebuilt('bin'),
-          paths.ninja_prebuilt(),
-          paths.build_tools_prebuilt(),
+          RUST_PREBUILT_PATH / 'bin',
+          CMAKE_PREBUILT_PATH / 'bin',
+          NINJA_PREBUILT_PATH,
+          BUILD_TOOLS_PREBUILT_PATH,
         ]] + [env['PATH']])
 
     # Only adjust the library path on Linux - on OSX, use the devtools curl
@@ -94,7 +91,7 @@ def main():
             old_library_path = ':{0}'.format(env['LIBRARY_PATH'])
         else:
             old_library_path = ''
-        env['LIBRARY_PATH'] = '{0}{1}'.format(paths.curl_prebuilt('lib'), old_library_path)
+        env['LIBRARY_PATH'] = '{0}{1}'.format(CURL_PREBUILT_PATH / 'lib', old_library_path)
 
     env['DESTDIR'] = OUT_PATH_PACKAGE
 
@@ -102,7 +99,7 @@ def main():
     # Initialize directories
     #
 
-    paths.out_path().mkdir(exist_ok=True)
+    OUT_PATH.mkdir(exist_ok=True)
     OUT_PATH_PACKAGE.mkdir(exist_ok=True)
 
     # We take DIST_DIR through an environment variable rather than an
@@ -111,7 +108,7 @@ def main():
     if dist_dir:
         dist_dir = Path(dist_dir).resolve()
     else:
-        dist_dir = paths.workspace_path('dist')
+        dist_dir = WORKSPACE_PATH / 'dist'
 
     dist_dir.mkdir(exist_ok=True)
 
@@ -120,7 +117,7 @@ def main():
     #
 
     source_manager.setup_files(
-      paths.rustc_path(), OUT_PATH_RUSTC, paths.patches_path(),
+      RUSTC_PATH, OUT_PATH_RUSTC, PATCHES_PATH,
       no_patch_abort=args.no_patch_abort)
 
     #
@@ -143,7 +140,7 @@ def main():
 
     # Offline fetch to regenerate lockfile
     res = subprocess.check_output(
-        [paths.rust_prebuilt('bin', 'cargo'), 'fetch', '--offline'],
+        [RUST_PREBUILT_PATH / 'bin' / 'cargo', 'fetch', '--offline'],
         cwd=OUT_PATH_RUSTC, env=env)
 
     #
@@ -157,9 +154,9 @@ def main():
 
     # Install sources
     if build_platform.system() == 'linux':
-        shutil.rmtree(paths.stdlib_srcs(), ignore_errors=True)
+        shutil.rmtree(OUT_PATH_STDLIB_SRCS, ignore_errors=True)
         for stdlib in STDLIB_SOURCES:
-            shutil.copytree(OUT_PATH_RUSTC / stdlib, paths.stdlib_srcs(stdlib))
+            shutil.copytree(OUT_PATH_RUSTC / stdlib, OUT_PATH_STDLIB_SRCS / stdlib)
 
     # Fixup
     # The Rust build doesn't have an option to auto-strip binaries, so we do
@@ -182,13 +179,13 @@ def main():
     lib64_path = OUT_PATH_PACKAGE / 'lib64'
     if not lib64_path.exists():
         lib64_path.mkdir()
-    shutil.copy2(paths.cxx_linker_path(libcxx_name),
+    shutil.copy2(LLVM_CXX_RUNTIME_PATH / libcxx_name,
                  OUT_PATH_PACKAGE / 'lib64' / libcxx_name)
 
     # Some stdlib crates might include Android.mk or Android.bp files.
     # If they do, filter them out.
     if build_platform.system() == 'linux':
-        for f in paths.stdlib_srcs().glob('**/Android.{mk,bp}'):
+        for f in OUT_PATH_STDLIB_SRCS.glob('**/Android.{mk,bp}'):
             f.unlink()
 
     # Dist

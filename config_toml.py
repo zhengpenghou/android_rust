@@ -18,7 +18,7 @@ import subprocess
 import stat
 
 import build_platform
-import paths
+from paths import *
 
 host_targets = [build_platform.triple()] + build_platform.alt_triples()
 device_targets = ['aarch64-linux-android', 'armv7-linux-androideabi',
@@ -29,13 +29,13 @@ all_targets = host_targets + device_targets
 def configure(rustc_path):
     """Generates config.toml for the rustc build."""
     with (rustc_path / 'config.toml').open('w') as config_toml:
-        cargo  = paths.rust_prebuilt('bin', 'cargo')
-        rustc  = paths.rust_prebuilt('bin', 'rustc')
-        cc     = paths.llvm_prebuilt('bin', 'clang')
-        cxx    = paths.llvm_prebuilt('bin', 'clang++')
-        ar     = paths.llvm_prebuilt('bin', 'llvm-ar')
-        cxxstd = paths.llvm_prebuilt('include', 'c++', 'v1')
-        ranlib = paths.llvm_prebuilt('bin', 'llvm-ranlib')
+        cargo  = RUST_PREBUILT_PATH / 'bin' / 'cargo'
+        rustc  = RUST_PREBUILT_PATH / 'bin' / 'rustc'
+        cc     = LLVM_PREBUILT_PATH / 'bin' / 'clang'
+        cxx    = LLVM_PREBUILT_PATH / 'bin' / 'clang++'
+        ar     = LLVM_PREBUILT_PATH / 'bin' / 'llvm-ar'
+        ranlib = LLVM_PREBUILT_PATH / 'bin' / 'llvm-ranlib'
+        cxxstd = LLVM_PREBUILT_PATH / 'include' / 'c++' / 'v1'
 
         # Add the path at which libc++ can be found in Android checkouts
         cxx_linker_flags = ' -Wl,-rpath,'
@@ -44,11 +44,11 @@ def configure(rustc_path):
         else:
             cxx_linker_flags += '\\$ORIGIN/../lib64'
         # Add the path at which libc++ can be found during the build
-        cxx_linker_flags += ' -Wl,-rpath,' + paths.cxx_linker_path().as_posix()
+        cxx_linker_flags += ' -Wl,-rpath,' + LLVM_CXX_RUNTIME_PATH.as_posix()
 
         def host_config(target):
-            wrapper_name = paths.this_path('clang-%s' % target)
-            cxx_wrapper_name = paths.this_path('clang++-%s' % target)
+            wrapper_name = TOOLCHAIN_PATH / ('clang-%s' % target)
+            cxx_wrapper_name = TOOLCHAIN_PATH / ('clang++-%s' % target)
 
             sysroot = None
             # Apple removed the normal sysroot at / on Mojave+, so we need
@@ -99,18 +99,21 @@ linker = "{cxx}"
 """.format(cc=wrapper_name, cxx=cxx_wrapper_name, ar=ar, ranlib=ranlib, target=target)
 
         def device_config(target):
-            wrapper_name = paths.this_path('clang-%s' % target)
+            wrapper_name = TOOLCHAIN_PATH / ('clang-%s' % target)
             with open(wrapper_name, 'w') as f:
                 f.write("""\
 #!/bin/sh
 {real_cc} $* -fuse-ld=lld -Wno-unused-command-line-argument --target={target} \
-        --sysroot={sysroot} -L{gcc_libdir} -L{sys_dir} -isystem {sys_includes} \
+        --sysroot={sysroot} -L{gcc_libdir} -L{sys_dir} -isystem {ndk_includes} \
         -isystem {target_includes}
-""".format(real_cc=cc, sysroot=paths.plat_ndk_sysroot(target),
-           sys_includes=paths.sys_includes(),
-           target_includes=paths.target_includes(target), target=target,
-           gcc_libdir=paths.gcc_libdir(target),
-           sys_dir=paths.plat_ndk_llvm_libs(target)))
+""".format(real_cc=cc,
+           sysroot=plat_ndk_sysroot_path(target),
+           ndk_includes=NDK_INCLUDE_PATH,
+           target_includes=target_includes_path(target),
+           target=target,
+           gcc_libdir=gcc_libdir_path(target),
+           sys_dir=plat_ndk_llvm_libs_path(target)))
+
             s = os.stat(wrapper_name)
             os.chmod(wrapper_name, s.st_mode | stat.S_IEXEC)
             return """\

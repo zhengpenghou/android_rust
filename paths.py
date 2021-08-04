@@ -16,123 +16,55 @@
 from pathlib import Path
 import build_platform
 
-THIS_DIR: Path = Path(__file__).parent.resolve()
-
 STAGE0_RUST_VERSION = '1.54.0'
 CLANG_REVISION = 'r416183b'
+CLANG_NAME: str = 'clang-{0}'.format(CLANG_REVISION)
 
+TOOLCHAIN_PATH: Path = Path(__file__).parent.resolve()
+WORKSPACE_PATH: Path = (TOOLCHAIN_PATH / '..' / '..').resolve()
+RUSTC_PATH:     Path = (TOOLCHAIN_PATH / '..' / 'rustc').resolve()
+PATCHES_PATH:   Path = (TOOLCHAIN_PATH / 'patches').resolve()
 
-def workspace_path(*args) -> Path:
-    """Generates a path relative to the root of the workspace."""
-    return THIS_DIR.joinpath('..', '..', *args).resolve()
+OUT_PATH:             Path = WORKSPACE_PATH / 'out'
+OUT_PATH_RUSTC:       Path = OUT_PATH / 'rustc'
+OUT_PATH_PACKAGE:     Path = OUT_PATH / 'package'
+OUT_PATH_STDLIB_SRCS: Path = OUT_PATH_PACKAGE / 'src' / 'stdlibs'
 
+PREBUILT_PATH:         Path = WORKSPACE_PATH / 'prebuilts'
+RUST_PREBUILT_PATH:    Path = (PREBUILT_PATH / 'rust' / build_platform.prebuilt() / STAGE0_RUST_VERSION)
+LLVM_PREBUILT_PATH:    Path = (PREBUILT_PATH / 'clang' / 'host' / build_platform.prebuilt() / CLANG_NAME)
+LLVM_CXX_RUNTIME_PATH: Path = LLVM_PREBUILT_PATH / 'lib64'
 
-def rustc_path(*args) -> Path:
-    """Generates a path relative to the rustc source directory."""
-    return THIS_DIR.joinpath('..', 'rustc', *args).resolve()
+# We live at      prebuilts/rust/${BUILD_PLATFORM}/${VERSION}/bin
+# libc++ lives at prebuilts/clang/host/${BUILD_PLATFORM}
+#                 /clang-${CLANG_REVISION}/lib64
+ANDROID_CXX_RUNTIME_PATH: Path = (
+    WORKSPACE_PATH / '..' / '..' / 'clang' / 'host' /
+        build_platform.prebuilt() / CLANG_NAME / 'lib64').resolve()
 
+CMAKE_PREBUILT_PATH:       Path = PREBUILT_PATH / 'cmake' / build_platform.prebuilt()
+NINJA_PREBUILT_PATH:       Path = PREBUILT_PATH / 'ninja' / build_platform.prebuilt()
+BUILD_TOOLS_PREBUILT_PATH: Path = PREBUILT_PATH / 'build-tools' / 'path' / build_platform.prebuilt()
+CURL_PREBUILT_PATH:        Path = PREBUILT_PATH / 'android-emulator-build' / 'cur' / build_platform.prebuilt_full()
 
-def patches_path(*args) -> Path:
-    """Generates a path relative to the patches directory."""
-    return THIS_DIR.joinpath('patches', *args).resolve()
+# Use of the NDK should eventually be removed so as to make this a Platform
+# target, but is used for now as a transition stage.
+NDK_PATH:         Path = WORKSPACE_PATH / 'toolchain' / 'prebuilts' / 'ndk' / 'r20'
+NDK_SYSROOT_PATH: Path = NDK_PATH / 'sysroot'
+NDK_INCLUDE_PATH: Path = NDK_SYSROOT_PATH / 'usr' / 'include'
+NDK_LLVM_PATH:    Path = NDK_PATH / 'toolchains' / 'llvm' / 'prebuilts' / 'linux-x86_64'
 
-
-def this_path(*args) -> Path:
-    """Generates a path relative to this directory."""
-    return THIS_DIR.joinpath(*args).resolve()
-
-
-def out_path(*args) -> Path:
-    """Generates a path relative to the output directory of the build."""
-    return workspace_path('out', *args)
-
-def stdlib_srcs(*args) -> Path:
-    """Generates a path relative to the directory to install stdlib sources."""
-    return out_path('package', 'src', 'stdlibs', *args)
-
-def rust_prebuilt(*args) -> Path:
-    """Generates a path relative to the rust prebuilt directory."""
-    return workspace_path('prebuilts', 'rust', build_platform.prebuilt(),
-                          STAGE0_RUST_VERSION, *args)
-
-def llvm_prebuilt(*args) -> Path:
-    """Generates a path relative to the LLVM prebuilt directory."""
-    return workspace_path('prebuilts', 'clang', 'host',
-                          build_platform.prebuilt(), clang_name(), *args)
-
-def cxx_linker_path(*args) -> Path:
-    """Generates an absolute path relative to the LLVM C++ runtime"""
-    return llvm_prebuilt('lib64', *args)
-
-def android_cxx_linker_path(*args) -> Path:
-    """Generates a relative path to the LLVM C++ in the Android tree"""
-    # We live at      prebuilts/rust/${BUILD_PLATFORM}/${VERSION}/bin
-    # libc++ lives at prebuilts/clang/host/${BUILD_PLATFORM}
-    #                 /clang-${CLANG_REVISION}/lib64
-    return Path.joinpath('..', '..', '..', '..', 'clang', 'host',
-                        build_platform.prebuilt(), clang_name(), 'lib64',
-                        *args)
-
-def cmake_prebuilt(*args) -> Path:
-    """Generates a path relative to the Cmake prebuilt directory."""
-    return workspace_path('prebuilts', 'cmake', build_platform.prebuilt(),
-                          *args)
-
-
-def ninja_prebuilt(*args) -> Path:
-    """Generates a path relative to the Ninja prebuilt directory."""
-    return workspace_path('prebuilts', 'ninja', build_platform.prebuilt(),
-                          *args)
-
-
-
-def build_tools_prebuilt(*args) -> Path:
-    """Generates a path relative to the build-tools prebuilt directory."""
-    return workspace_path('prebuilts', 'build-tools', 'path',
-                          build_platform.prebuilt(), *args)
-
-
-def curl_prebuilt(*args) -> Path:
-    """Generates a path relative to the curl prebuilt directory."""
-    return workspace_path('prebuilts', 'android-emulator-build', 'curl',
-                          build_platform.prebuilt_full(), *args)
-
-
-def ndk(*args) -> Path:
-    """Generates a path relative to the prebuilt NDK.
-
-    Use of the NDK should eventually be removed so as to make this a Platform
-    target, but is used for now as a transition stage.
-    """
-    return workspace_path('toolchain', 'prebuilts', 'ndk', 'r20', *args)
-
-
-def ndk_sysroot(*args) -> Path:
-    """Generates a path relative to the NDK sysroot."""
-    return ndk('sysroot', *args)
-
-
-def sys_includes(*args) -> Path:
-    """Generates a path relative to the NDK sysroot include dir."""
-    return ndk_sysroot('usr', 'include', *args)
-
-
-def target_includes(target, *args) -> Path:
+def target_includes_path(target) -> Path:
     """Generates a path relative to the target-specific NDK include dir."""
-    return sys_includes(normalize_target(target), *args)
+    return NDK_INCLUDE_PATH / normalize_target(target)
 
 
-def ndk_llvm(*args) -> Path:
-    """Generates a path relative to the NDK prebuilt for LLVM objects"""
-    return ndk('toolchains', 'llvm', 'prebuilt', 'linux-x86_64', *args)
-
-
-def plat_ndk_llvm_libs(target, *args) -> Path:
+def plat_ndk_llvm_libs_path(target) -> Path:
     """Generates a path relative to the target's LLVM NDK sysroot libs"""
-    return ndk_llvm('sysroot', 'usr', 'lib', normalize_target(target), *args)
+    return NDK_LLVM_PATH / 'sysroot' / 'usr' / 'lib' / normalize_target(target)
 
 
-def plat_ndk_sysroot(target, *args) -> Path:
+def plat_ndk_sysroot_path(target) -> Path:
     """Generates a path relative to the NDK platform-specific sysroot.
 
     This sysroot is incomplete, and contains only the object files, not the
@@ -140,18 +72,12 @@ def plat_ndk_sysroot(target, *args) -> Path:
     additional level of indirection for the API level which platform clang
     does not look through.
     """
-    return ndk('platforms', 'android-29', 'arch-' + extract_arch(target),
-               *args)
+    return NDK_PATH / 'platforms' / 'android-29' / ('arch-' + extract_arch(target))
 
 
-def gcc_libdir(target, *args) -> Path:
+def gcc_libdir_path(target) -> Path:
     """Locates the directory with the gcc library target prebuilts."""
-    return ndk_llvm('lib', 'gcc', normalize_target(target), '4.9.x', *args)
-
-
-def clang_name():
-    """Returns the versioned clang directory name."""
-    return 'clang-{0}'.format(CLANG_REVISION)
+    return NDK_LLVM_PATH / 'lib' / 'gcc' / normalize_target(target) / '4.9.x'
 
 
 def extract_arch(target):
