@@ -1,2 +1,2 @@
-#!/bin/sh
+#!/bin/bash
 $real_cc $$* $ld_option --target=$target $sysroot_flags
