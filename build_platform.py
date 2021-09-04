@@ -14,6 +14,12 @@ def system() -> str:
         return 'darwin'
     raise RuntimeError("Unknown System: " + sys)
 
+def is_linux() -> bool:
+    return platform.system() == 'Linux'
+
+def is_darwin() -> bool:
+    return platform.system() == 'Darwin'
+
 def prebuilt() -> str:
     """Returns the prebuilt subdirectory for prebuilts which do not use
     subarch specialization."""

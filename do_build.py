@@ -98,7 +98,7 @@ def main():
         ]] + [env['PATH']])
 
     # Only adjust the library path on Linux - on OSX, use the devtools curl
-    if build_platform.system() == 'linux':
+    if build_platform.is_linux():
         if 'LIBRARY_PATH' in env:
             old_library_path = ':{0}'.format(env['LIBRARY_PATH'])
         else:
@@ -168,7 +168,7 @@ def main():
         sys.exit(ec)
 
     # Install sources
-    if build_platform.system() == 'linux':
+    if build_platform.is_linux():
         shutil.rmtree(OUT_PATH_STDLIB_SRCS, ignore_errors=True)
         for stdlib in STDLIB_SOURCES:
             shutil.copytree(OUT_PATH_RUST_SOURCE / stdlib, OUT_PATH_STDLIB_SRCS / stdlib)
@@ -187,7 +187,7 @@ def main():
         OUT_PATH_PACKAGE / 'bin' / 'rustdoc'])
 
     # Install the libc++ library to out/package/lib64/
-    if build_platform.system() == 'darwin':
+    if build_platform.is_darwin():
         libcxx_name = 'libc++.dylib'
     else:
         libcxx_name = 'libc++.so.1'
@@ -199,7 +199,7 @@ def main():
 
     # Some stdlib crates might include Android.mk or Android.bp files.
     # If they do, filter them out.
-    if build_platform.system() == 'linux':
+    if build_platform.is_linux():
         for f in OUT_PATH_STDLIB_SRCS.glob('**/Android.{mk,bp}'):
             f.unlink()
 
