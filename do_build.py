@@ -39,7 +39,6 @@ STDLIB_SOURCES = [
         "library/profiler_builtins",
         "library/std",
         "library/stdarch",
-        "library/term",
         "library/test",
         "library/unwind",
         "vendor/backtrace",
