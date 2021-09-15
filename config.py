@@ -66,7 +66,7 @@ def instantiate_template_file(template_path: Path, output_path: Path, make_exec:
         output_path.chmod(output_path.stat().st_mode | stat.S_IEXEC)
 
 
-def host_config(target: str, sysroot_flags: str) -> str:
+def host_config(target: str, toolchain_flags: str) -> str:
     cc_wrapper_name  = OUT_PATH_WRAPPERS / ('clang-%s' % target)
     cxx_wrapper_name = OUT_PATH_WRAPPERS / ('clang++-%s' % target)
 
@@ -76,7 +76,7 @@ def host_config(target: str, sysroot_flags: str) -> str:
         real_cc=CC_PATH,
         ld_option=LD_OPTIONS,
         target=target,
-        sysroot_flags=sysroot_flags)
+        toolchain_flags=toolchain_flags)
 
     instantiate_template_exec(
         HOST_CXX_WRAPPER_TEMPLATE,
@@ -84,7 +84,7 @@ def host_config(target: str, sysroot_flags: str) -> str:
         real_cxx=CXX_PATH,
         ld_option=LD_OPTIONS,
         target=target,
-        sysroot_flags=sysroot_flags,
+        toolchain_flags=toolchain_flags,
         cxxstd=CXXSTD_PATH,
         cxx_linker_flags=CXX_LINKER_FLAGS)
 
@@ -116,18 +116,21 @@ def device_config(target: str) -> str:
 
 def configure():
     """Generates config.toml for the rustc build."""
-    sysroot = None
-    # Apple removed the normal sysroot at / on Mojave+, so we need
-    # to go hunt for it on OSX
-    # On pre-Mojave, this command will output the empty string.
+    host_toolchain_flags = None
+
     if build_platform.system() == 'darwin':
+        # Apple removed the normal sysroot at / on Mojave+, so we need
+        # to go hunt for it on OSX
+        # On pre-Mojave, this command will output the empty string.
         output = subprocess.check_output(
             ['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
-        sysroot = output.rstrip().decode('utf-8')
-    host_sysroot_flags = ("--sysroot " + sysroot) if sysroot else ""
+        host_toolchain_flags = "--sysroot " + output.rstrip().decode('utf-8')
+    else:
+        # On Linux build hosts we need to set the path to the gcc toolchain.
+        host_toolchain_flags = "-B " + GCC_TOOLCHAIN_PATH.as_posix()
 
     host_configs = '\n'.join(
-        [host_config(target, host_sysroot_flags) for target in HOST_TARGETS])
+        [host_config(target, host_toolchain_flags) for target in HOST_TARGETS])
     device_configs = '\n'.join(
         [device_config(target) for target in DEVICE_TARGETS])
 
