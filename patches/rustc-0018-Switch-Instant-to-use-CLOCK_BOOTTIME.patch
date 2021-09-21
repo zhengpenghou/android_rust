@@ -1,0 +1,30 @@
+From 267585dccb068a609c424ffd564abbb0d8a948b9 Mon Sep 17 00:00:00 2001
+From: Matthew Maurer <matthew.r.maurer@gmail.com>
+Date: Mon, 9 Aug 2021 19:01:45 -0700
+Subject: [PATCH] Switch Instant to use CLOCK_BOOTTIME
+
+For Linux-like platforms, use CLOCK_BOOTTIME which continues ticking
+during suspend. Without this change, `Duration` between two `Instant`s
+can bear little relation to reality if a suspend took place in between.
+
+Fixes rust-lang#87906
+---
+ library/std/src/sys/unix/time.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/library/std/src/sys/unix/time.rs b/library/std/src/sys/unix/time.rs
+index 7dc09add27f..b8e00a8f2de 100644
+--- a/library/std/src/sys/unix/time.rs
++++ b/library/std/src/sys/unix/time.rs
+@@ -293,7 +293,7 @@ pub struct SystemTime {
+ 
+     impl Instant {
+         pub fn now() -> Instant {
+-            Instant { t: now(libc::CLOCK_MONOTONIC) }
++            Instant { t: now(libc::CLOCK_BOOTTIME) }
+         }
+ 
+         pub const fn zero() -> Instant {
+-- 
+2.33.0.464.g1972c5931b-goog
+
