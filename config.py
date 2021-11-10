@@ -25,7 +25,7 @@ from paths import *
 
 HOST_TARGETS: list[str] = [build_platform.triple()] + build_platform.alt_triples()
 DEVICE_TARGETS: list[str] = ['aarch64-linux-android', 'armv7-linux-androideabi',
-                  'x86_64-linux-android', 'i686-linux-android']
+                  'x86_64-linux-android', 'i686-linux-android', 'riscv64-linux-android']
 
 ALL_TARGETS: list[str] = HOST_TARGETS + DEVICE_TARGETS
 
