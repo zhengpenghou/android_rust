@@ -108,7 +108,7 @@ index 7dbd70948b..6ddedef8fc 100644
  pub const ASAN_SUPPORTED_TARGETS: &[&str] = &[
      "aarch64-apple-darwin",
      "aarch64-fuchsia",
-+    "aarch64-linux-android",
++    "aarch64-linux-android","riscv64-linux-android",
      "aarch64-unknown-linux-gnu",
 +    "arm-linux-androideabi",
 +    "armv7-linux-androideabi",
